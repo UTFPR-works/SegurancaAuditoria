@@ -1,0 +1,17 @@
+{
+  "name": "web-chat-pgp2",
+  "version": "1.0.0",
+  "description": "web chat app usign openpgp and js",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon app"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^2.6.1",
+    "express": "^4.16.3",
+    "nodemon": "^1.18.4",
+    "socket.io": "^2.1.1"
+  }
+}
