@@ -1,102 +1,131 @@
 #!/usr/bin/env node
+require('dotenv-safe').load();
+const mongoClient = require("mongodb").MongoClient;
+mongoClient.connect(process.env.MONGO_CONNECTION, function (err, conn) {
+  if (err) { return console.log(err); }
+  console.log("database on!");
+  global.db = conn.db(process.env.MONGO_DB);
 
-/**
- * Module dependencies.
- */
+  var app = require('../app');
+  var debug = require('debug')('web-chat-pgp:server');
+  var http = require('http');
 
-var app = require('../app');
-var debug = require('debug')('web-chat-pgp:server');
-var http = require('http');
+  /**
+   * Get port from environment and store in Express.
+   */
 
-/**
- * Get port from environment and store in Express.
- */
+  var port = normalizePort(process.env.PORT || '3000');
+  app.set('port', port);
 
-var port = normalizePort(process.env.PORT || '3000');
-app.set('port', port);
+  /**
+   * Create HTTP server.
+   */
 
-/**
- * Create HTTP server.
- */
+  var server = http.createServer(app);
+  var io = require('socket.io')(server);
+  const openpgp = require('../public/javascripts/openpgp.js')
+  const util = require('../public/javascripts/util');
+  io.on('connection', function (socket) {
+    console.log('user in');
 
-var server = http.createServer(app);
-var io = require('socket.io')(server);
-io.on('connection', function (socket) {
-  console.log('user in');
-  socket.on('chat message', function (msg) {
-    console.log('message: ' + msg);
-    io.emit('chat message', msg);
+    socket.on('chat encript', function (msg) {
+      const options = {
+        data: JSON.stringify(msg),
+        publicKeys: openpgp.key.readArmored(util.publicKey).keys
+      };
+
+      openpgp.encrypt(options)
+        .then((cipherText) => {
+          msg = cipherText.data;
+          io.emit('chat go', msg);
+        });
+    });
+
+    socket.on('chat decript', function (msg) {
+      let privKey = openpgp.key.readArmored(util.privateKey).keys[0];
+      if (privKey.decrypt(util.user.password))
+        openpgp.decrypt({
+          privateKey: privKey,
+          message: openpgp.message.readArmored(msg)
+        }).then((decryptedData) => {
+          msg = decryptedData.data;
+          io.emit('chat back', msg);
+        })
+    });
+
+    socket.on('disconnect', function () {
+      console.log('user out');
+    });
+
   });
 
-  socket.on('disconnect', function () {
-    console.log('user out');
-  });
-});
+  /**
+   * Listen on provided port, on all network interfaces.
+   */
 
-/**
- * Listen on provided port, on all network interfaces.
- */
+  server.listen(port);
+  server.on('error', onError);
+  server.on('listening', onListening);
 
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+  /**
+   * Normalize a port into a number, string, or false.
+   */
 
-/**
- * Normalize a port into a number, string, or false.
- */
+  function normalizePort(val) {
+    var port = parseInt(val, 10);
 
-function normalizePort(val) {
-  var port = parseInt(val, 10);
+    if (isNaN(port)) {
+      // named pipe
+      return val;
+    }
 
-  if (isNaN(port)) {
-    // named pipe
-    return val;
+    if (port >= 0) {
+      // port number
+      return port;
+    }
+
+    return false;
   }
 
-  if (port >= 0) {
-    // port number
-    return port;
-  }
+  /**
+   * Event listener for HTTP server "error" event.
+   */
 
-  return false;
-}
-
-/**
- * Event listener for HTTP server "error" event.
- */
-
-function onError(error) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
-
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
+  function onError(error) {
+    if (error.syscall !== 'listen') {
       throw error;
+    }
+
+    var bind = typeof port === 'string'
+      ? 'Pipe ' + port
+      : 'Port ' + port;
+
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+      case 'EACCES':
+        console.error(bind + ' requires elevated privileges');
+        process.exit(1);
+        break;
+      case 'EADDRINUSE':
+        console.error(bind + ' is already in use');
+        process.exit(1);
+        break;
+      default:
+        throw error;
+    }
   }
-}
 
-/**
- * Event listener for HTTP server "listening" event.
- */
+  /**
+   * Event listener for HTTP server "listening" event.
+   */
 
-function onListening() {
-  var addr = server.address();
-  var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  debug('Listening on ' + bind);
-}
+  function onListening() {
+    var addr = server.address();
+    var bind = typeof addr === 'string'
+      ? 'pipe ' + addr
+      : 'port ' + addr.port;
+    debug('Listening on ' + bind);
+  }
+
+})
+

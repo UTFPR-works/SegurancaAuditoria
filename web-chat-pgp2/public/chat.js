@@ -22,4 +22,8 @@ $(function () {
 		chatroom.append('<p class="message">' + data.username + ': ' + data.message + '</p>');
 	});
 
+	socket.on('privkey', (data) => {
+		console.log(data.privkey);
+	})
+
 });

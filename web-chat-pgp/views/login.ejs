@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+
+<head>
+  <style>
+    * {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font: 13px Helvetica, Arial;
+			display: flex;
+			justify-content: center;
+		}
+
+		.content {
+			width: 30%;
+			height: 30vh;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+      align-items: center;
+		}
+
+    .signup {
+			color: rgba(0, 0, 0, .8);
+			text-decoration: none;
+    }
+
+    .form-login {
+      text-align: center;
+    }
+    </style>
+</head>
+
+<body>
+  <div class="content">
+    <h1>Login</h1>
+    <form action="/login" method="POST" class="form-login">
+      <input name="username" placeholder="Nome de usuário" type="text" /><br />
+      <input name="password" placeholder="Senha" type="password" /><br />
+      <button class="button" type="submit">Entrar</button>
+    </form>
+    <% if(message) { %>
+    <p>
+      <label style="color:Red">
+        <%= message %></label>
+    </p>
+    <%}%>
+    <p>
+      <a class="signup" href="/users/signup">Criar conta</a>
+    </p>
+  </div>
+</body>

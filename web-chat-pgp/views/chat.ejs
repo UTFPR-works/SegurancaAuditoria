@@ -12,65 +12,102 @@
 
 		body {
 			font: 13px Helvetica, Arial;
+			display: flex;
+			justify-content: center;
 		}
 
-		form {
-			background: #000;
+		.content {
+			border: rgb(160, 160, 160) 3px solid;
+			border-radius: 5px;
+			width: 50%;
+			height: 100vh;
+			display: flex;
+			flex-direction: column;
+			justify-content: flex-end;
+		}
+
+		.form {
+			display: flex;
+			flex-direction: row;
 			padding: 3px;
-			position: fixed;
 			bottom: 0;
 			width: 100%;
+			align-self: flex-end;
+			justify-content: space-between;
 		}
 
-		form input {
-			border: 0;
+		.form .input {
+			border: rgb(160, 160, 160) 2px solid;
 			padding: 10px;
-			width: 90%;
-			margin-right: .5%;
+			width: 75%;
 		}
 
-		form button {
-			width: 9%;
-			background: rgb(130, 224, 255);
-			border: none;
+		.form .button {
+			width: 20%;
+			border: rgb(160, 160, 160) 2px solid;
 			padding: 10px;
+			background-color: #fff;
 		}
 
-		#messages {
-			list-style-type: none;
-			margin: 0;
+		.messages {
+			width: 100%;
 			padding: 0;
 		}
 
-		#messages li {
+		.messages-list {
+			list-style-type: none;
+		}
+
+		.messages-list li {
 			padding: 5px 10px;
 		}
 
-		#messages li:nth-child(odd) {
-			background: #eee;
+		.logout-button {
+			position: absolute;
+			top: 0;
+			right: 0;
+			padding: 15px;
+			margin: 15px;
+			height: 30px;
+			border-radius: 15px;
+			align-items: center;
+			line-height: 2px;
+			color: rgba(0, 0, 0, .8);
+			text-decoration: none;
+			background-color: rgba(255, 0, 0, 0.521);
 		}
 	</style>
 </head>
 
 <body>
-	<ul id="messages"></ul>
-	<form action="">
-		<input id="m" autocomplete="off" />
-		<button>Send</button>
-	</form>
+	<a class="logout-button" href="/logout">Sair</a>
+	<div class="content">
+		<div class="messages">
+			<ul id="messages" class="messages-list"></ul>
+		</div>
+		<form class="form" action="">
+			<input placeholder="Digite sua mensagem aqui" id="m" class="input" autocomplete="off" />
+			<button class="button">Enviar</button>
+		</form>
+	</div>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 	<script>
 		$(function () {
 			var socket = io();
 			$('form').submit(function () {
-				socket.emit('chat message', $('#m').val());
+				socket.emit('chat encript', $('#m').val());
 				$('#m').val('');
 				return false;
 			});
-			socket.on('chat message', function (msg) {
+
+			socket.on('chat back', function (msg) {
 				$('#messages').append($('<li>').text(msg));
-			})
+			});
+
+			socket.on('chat go', function (msg) {
+				socket.emit('chat decript', msg);
+			});
 		});
 	</script>
 </body>
